@@ -1,4 +1,6 @@
 #include <Wire.h>
+#include <math.h>
+
 const int hallPin = 8; //sygnal - czarny, niebieski - GND, brązowy - VCC
 int hallState = 0;
 
@@ -26,9 +28,20 @@ void WireInit() {
   Serial.print("START\n");
 }
 
+double Thermister(int RawADC) {  //Function to perform the fancy math of the Steinhart-Hart equation
+ double Temp;
+ Temp = log(((10240000/RawADC) - 10000));
+ Temp = 1 / (0.001129148 + (0.000234125 + (0.0000000876741 * Temp * Temp ))* Temp );
+ Temp = Temp - 273.15;              // Convert Kelvin to Celsius
+ Temp = (Temp * 9.0)/ 5.0 + 32.0; // Celsius to Fahrenheit - comment out this line if you need Celsius
+ return Temp;
+}
+
 void setup(){
   WireInit();
-  digitalWrite(hallPin, HIGH);
+  analogReference(DEFAULT);
+  pinMode(A7, INPUT_PULLUP);
+
 /*
   pinMode(relay1, OUTPUT);
   pinMode(relay2, OUTPUT);
@@ -55,15 +68,11 @@ void test_relay() {
   delay(10000);
 }
 */
-
+int val;
 void loop(){
-  hallState = digitalRead(hallPin);
-
-
-if (hallState == HIGH){
-    Serial.print(" No \n");
-  }
-  else{
-    Serial.print(" Yes \n");
-  }
+ 
+  val=analogRead(A7);      //Read the analog port 0 and store the value in val
+  //temp=Thermister(val);   //Runs the fancy math on the raw analog value
+  Serial.println(val); 
+  delay(500);
 }
