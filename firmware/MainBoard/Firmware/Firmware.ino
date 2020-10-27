@@ -1,8 +1,9 @@
 #include <Wire.h>
 #include <math.h>
-#include <OneWire.h>
-#include <DallasTemperature.h>
+
 #include "EasyNextionLibrary.h" //https://github.com/Seithan/EasyNextionLibrary
+#include "config.h"
+#include "TemperatureSensor.h"
 
 
 /*
@@ -10,35 +11,9 @@
  * Podajnik zawsze musi wykonać pełny obrót!
  */
 
-#define pinPompaCO     A2 
-#define pinPompaCWU    A3
-#define pinPompaPDL    A4
-#define pinPodajnik    A5
-#define pinNadmuch     A10
-#define pinTempCO_1    A11
-#define pinTempCO_2    A13
-#define pinTempCWU     A14
-#define pinHallotron   A16
 
-#define czujnikTempCO_1    0 // wewnętrzny w kotle
-#define czujnikTempCO_2    1 // zewnetrzny na ujsciu wody z kotła
-#define czujnikTempCWU     2
 
-#define okresPomiaruTemp  5000 // co jaki czas maja byc odczytywane czujniki temperatury 1000 = 1 sec
 
-#define ostatniPomiarTemp  0
-#define ostatniaZmianaTemp 1
-#define ostatniaTemp       2
-
-#define deltaTemp          1 // 1 stopień celcjusza
-
-float zadanaTempCO     = 55;
-float zadanaTempCWU    = 60;
-int   silaDmuchawy     = 50; // od 10% do 100%
-float tempHistereza    = 1;
-int   interwalPrzepalanie          = 40*60; // w sekundach 40 minut
-int   interwalPodajnikaStandardowy = 60;    // odstęp pomiędzy załaczeniami podajnika w sekundach
-int   interwalPodajnikaRozpalanie  = 180;   // odstęp pomiędzy załaczeniami podajnika w sekundach 
 
 int temperatura [][3]  = {
                            {0, 0, 0},   // Temp CO punkt pomiaru 1 (czas ostatniego pomiaru, czas ostatniej zmiany temperatury, temp ostatniego pomiaru)
@@ -68,10 +43,6 @@ int przekaznik [][1]   = {
 
 EasyNex nxScreen(Serial);
 
-void WireInit() {
-  Serial.begin(115200);
-  Serial.print("START\n");
-}
 
 /*
 float AktualizujTempCO_1() {
@@ -168,19 +139,15 @@ bool CheckList() {
   return true;
 }
 
-  OneWire oneWire1(27); //Podłączenie do A5
-  DallasTemperature sensors1(&oneWire1);
-  OneWire oneWire2(30); //Podłączenie do A5
-  DallasTemperature sensors2(&oneWire2);
 
-  
+
+  Temperature co(25);
+  Temperature co2(25);
+  Temperature co3(25);
+
 void setup(){
-
-  tone(39, 4500, 3000);
-  WireInit();
   Serial.begin(9600);
-  sensors1.begin();
-  sensors2.begin()';
+
 
 /*
   pinMode(relay1, OUTPUT);
@@ -210,8 +177,13 @@ void test_relay() {
   delay(10000);
 }
 */
+
+
 int val;
 void loop(){
+  Serial.print("Aktualna temperatura: ");
+  Serial.println(co.get());
+  delay(500);
     /*float CO_1 = AktualizujTempCO_1();
     float CO_2 = AktualizujTempCO_2();
     float CWU = AktualizujTempCWU();
@@ -228,12 +200,6 @@ void loop(){
     }
     przepalanie();
     */
-  Serial.print("Aktualna temperatura: ");
-  sensors1.requestTemperatures(); //Pobranie temperatury czujnika
-  Serial.print(sensors1.getTempCByIndex(0));  //Wyswietlenie informacji
-  sensors2.requestTemperatures(); //Pobranie temperatury czujnika
-  Serial.print("  ");
-  Serial.println(sensors2.getTempCByIndex(0));  //Wyswietlenie informacji
-  delay(1000);
+  
     
 }
