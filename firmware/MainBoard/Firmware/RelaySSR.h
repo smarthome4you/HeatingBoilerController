@@ -7,8 +7,10 @@ class RelaySSR
     RelaySSR(int pin);
     void on();
     void off();
+    bool isOn();
   private:
-    int pin;   
+    int pin;
+    bool relayState = false;
 };
 
 #endif

@@ -40,7 +40,7 @@ Temperature tempSensorWater(pinTempWater);
 RelaySSR boilerMainPump(pinBoilerCentralHeatingPump);
 RelaySSR boilerWaterPump(pinBoilerWaterPump);
 RelaySSR boilerFloorPump(pinBoilerFloorPump);
-RelaySSR boilerBlower(pinBoilerBlower);
+RelaySSR boilerFan(pinBoilerFan);
 BoilerFeeder boilerFeeder(pinBoilerFeeder, pinBoilerFeederHall);
 
 EasyNex myNex(Serial1);  
@@ -49,21 +49,39 @@ EasyNex myNex(Serial1);
 void setup(){
   Serial.begin(115200);
   myNex.begin(9600);
+  myNex.writeStr("page main");
   boilerFeeder.on();
 }
 
+unsigned long timeMainScreen = millis();
+void updateMainScreen(int tempBoilerIn, int tempBoilerOut, int tempBoilerWater, BoilerFeeder *boilerFeeder, RelaySSR *boilerMainPump, RelaySSR *boilerWaterPump, RelaySSR *boilerFloorPump, RelaySSR *boilerFan)
+{
+  if ( ! (abs(millis() - timeMainScreen) > timeToUpdatescreen )) return;
+  
+  if ( boilerFeeder->isRun()) myNex.writeNum("ledFeeder.val", 1); else myNex.writeNum("ledFeeder.val", 0);
+  if ( boilerFeeder->hall->getHallState()) myNex.writeNum("ledHall.val", 1); else myNex.writeNum("ledHall.val", 0);
+  if ( boilerFeeder->isError()) myNex.writeStr("feederError.txt", "Feeder Error"); else myNex.writeStr("feederError.txt", "");
+
+  if ( boilerMainPump->isOn()) myNex.writeNum("ledBoilerPump.val", 1); else myNex.writeNum("ledBoilerPump.val", 0);
+  if ( boilerWaterPump->isOn()) myNex.writeNum("ledWaterPump.val", 1); else myNex.writeNum("ledWaterPump.val", 0);
+  if ( boilerFloorPump->isOn()) myNex.writeNum("ledFloorPump.val", 1); else myNex.writeNum("ledFloorPump.val", 0);
+
+  if ( boilerFan->isOn()) myNex.writeNum("ledBoilerFan.val", 1); else myNex.writeNum("ledBoilerFan.val", 0);
+
+  myNex.writeNum("tempBoiler1.val", tempBoilerIn);
+  myNex.writeNum("tempBoiler2.val", tempBoilerOut);
+  myNex.writeNum("tempWater.val", tempBoilerWater);
+  
+  timeMainScreen = millis();
+}
 
 void loop(){
-  boilerFeeder.process();
   myNex.NextionListen();
+  boilerFeeder.process();
+  
   int tempBoilerIn = tempSensorBoilerIn.getAsInt();
-  if ( boilerFeeder.isRun()) myNex.writeNum("ledFeeder.val", 1); else myNex.writeNum("ledFeeder.val", 0);
-  if ( boilerFeeder.hall->getHallState()) myNex.writeNum("ledHall.val", 1); else myNex.writeNum("ledHall.val", 0);
-  if ( boilerFeeder.isError()) myNex.writeStr("errorFeeder.txt", "Error");
-  
-  
-  myNex.writeNum("tempBoiler1.val", tempBoilerIn);
-  myNex.writeNum("tempBoiler2.val", tempBoilerIn);
+    
+  updateMainScreen(tempBoilerIn, tempBoilerIn, tempBoilerIn, &boilerFeeder, &boilerMainPump, &boilerWaterPump, &boilerFloorPump, &boilerFan);
   //val = myNex.readNumber("setBoilerTemp.val");
   //myNex.writeStr("page 1");
 
