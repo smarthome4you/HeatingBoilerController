@@ -2,24 +2,25 @@
 #ifndef config_h
 #define config_h
 
-#define czujnikTempCO_1    0 // wewnętrzny w kotle
-#define czujnikTempCO_2    1 // zewnetrzny na ujsciu wody z kotła
-#define czujnikTempCWU     2
+#define pinTempBoilerIn              25 // wewnętrzny czujnik temperatury pieca (czujnik osadzony wewnątrz kotła) - podstawowy czujnik temperatury kotła
+#define pinTempBoilerOut             26 // zewnętrzny czujnik temperatury pieca (czujnik przy wyjściu z pieca obiegu wody centralnego ogrzewania) - dodatkowe zabezpieczenie
+#define pinTempWater                 27 // czujnik temperatury wody użytkowej
+#define pinBoilerCentralHeatingPump  28 // pompa centralnego ogrzewania
+#define pinBoilerWaterPump           29 // pompa ciepłej wody użytkowej
+#define pinBoilerFloorPump           30 // pompa podłogówki
+#define pinBoilerFeeder              31 // podajnik kotła
+#define pinBoilerFeederHall          32 // czujniik halla podajnika kotła
+#define pinBoilerBlower              32 // dmuchawa kotła
 
-#define okresPomiaruTemp  5000 // co jaki czas maja byc odczytywane czujniki temperatury 1000 = 1 sec
+
+#define tempInterval          1000      // co jaki czas maja byc odczytywane czujniki temperatury 10000 = 1 sec
+#define timeToStopFeeder      2000      // opoznienie zatrzymania podajnika
+#define timeToEmergencyFeeder 60000     // czas do awaryjnego zatrzymania podajnika gdy hallotron nie działa - blokada podajnika do resetu sterownika
 
 #define ostatniPomiarTemp  0
 #define ostatniaZmianaTemp 1
 #define ostatniaTemp       2
 
-#define deltaTemp          1 // 1 stopień celcjusza
-
-float zadanaTempCO     = 55;
-float zadanaTempCWU    = 60;
-int   silaDmuchawy     = 50; // od 10% do 100%
-float tempHistereza    = 1;
-int   interwalPrzepalanie          = 40*60; // w sekundach 40 minut
-int   interwalPodajnikaStandardowy = 60;    // odstęp pomiędzy załaczeniami podajnika w sekundach
-int   interwalPodajnikaRozpalanie  = 180;   // odstęp pomiędzy załaczeniami podajnika w sekundach
+#define blowingForce      50  // siła nadmuchu w %
 
 #endif
