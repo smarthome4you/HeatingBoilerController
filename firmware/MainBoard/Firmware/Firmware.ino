@@ -3,9 +3,11 @@
 
 #include "config.h"
 #include "EasyNextionLibrary.h" //https://github.com/Seithan/EasyNextionLibrary
+#include "TimerOne.h"
 #include "TemperatureSensor.h"
 #include "BoilerFeeder.h"
 #include "RelaySSR.h"
+#include "BoilerFan.h"
 
 /*
  * Firmware dla kotła z podajnikiem szufladkowym
@@ -40,7 +42,6 @@ Temperature tempSensorWater(pinTempWater);
 RelaySSR boilerMainPump(pinBoilerCentralHeatingPump);
 RelaySSR boilerWaterPump(pinBoilerWaterPump);
 RelaySSR boilerFloorPump(pinBoilerFloorPump);
-RelaySSR boilerFan(pinBoilerFan);
 BoilerFeeder boilerFeeder(pinBoilerFeeder, pinBoilerFeederHall);
 
 EasyNex myNex(Serial1);  
@@ -50,11 +51,14 @@ void setup(){
   Serial.begin(115200);
   myNex.begin(9600);
   myNex.writeStr("page main");
-  boilerFeeder.on();
+
+  FanSetup();
+  FanSetPower(5);
+  FanOff();
 }
 
 unsigned long timeMainScreen = millis();
-void updateMainScreen(int tempBoilerIn, int tempBoilerOut, int tempBoilerWater, BoilerFeeder *boilerFeeder, RelaySSR *boilerMainPump, RelaySSR *boilerWaterPump, RelaySSR *boilerFloorPump, RelaySSR *boilerFan)
+void updateMainScreen(int tempBoilerIn, int tempBoilerOut, int tempBoilerWater, BoilerFeeder *boilerFeeder, RelaySSR *boilerMainPump, RelaySSR *boilerWaterPump, RelaySSR *boilerFloorPump)
 {
   if ( ! (abs(millis() - timeMainScreen) > timeToUpdatescreen )) return;
   
@@ -66,7 +70,7 @@ void updateMainScreen(int tempBoilerIn, int tempBoilerOut, int tempBoilerWater, 
   if ( boilerWaterPump->isOn()) myNex.writeNum("ledWaterPump.val", 1); else myNex.writeNum("ledWaterPump.val", 0);
   if ( boilerFloorPump->isOn()) myNex.writeNum("ledFloorPump.val", 1); else myNex.writeNum("ledFloorPump.val", 0);
 
-  if ( boilerFan->isOn()) myNex.writeNum("ledBoilerFan.val", 1); else myNex.writeNum("ledBoilerFan.val", 0);
+  if ( FanIsOn()) myNex.writeNum("ledBoilerFan.val", 1); else myNex.writeNum("ledBoilerFan.val", 0);
 
   myNex.writeNum("tempBoiler1.val", tempBoilerIn);
   myNex.writeNum("tempBoiler2.val", tempBoilerOut);
@@ -75,13 +79,15 @@ void updateMainScreen(int tempBoilerIn, int tempBoilerOut, int tempBoilerWater, 
   timeMainScreen = millis();
 }
 
-void loop(){
+void loop(){ 
   myNex.NextionListen();
   boilerFeeder.process();
   
   int tempBoilerIn = tempSensorBoilerIn.getAsInt();
-    
-  updateMainScreen(tempBoilerIn, tempBoilerIn, tempBoilerIn, &boilerFeeder, &boilerMainPump, &boilerWaterPump, &boilerFloorPump, &boilerFan);
+
+  //if ( tempBoilerIn < 2800) FanOn(); else FanOff();
+  
+  if ( myNex.currentPageId == 0 ) updateMainScreen(tempBoilerIn, tempBoilerIn, tempBoilerIn, &boilerFeeder, &boilerMainPump, &boilerWaterPump, &boilerFloorPump);
   //val = myNex.readNumber("setBoilerTemp.val");
   //myNex.writeStr("page 1");
 

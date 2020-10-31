@@ -15,13 +15,13 @@
 
 #define tempInterval          1000      // co jaki czas maja byc odczytywane czujniki temperatury 10000 = 1 sec
 #define timeToStopFeeder      2000      // opoznienie zatrzymania podajnika
-#define timeToEmergencyFeeder 60000     // czas do awaryjnego zatrzymania podajnika gdy hallotron nie działa - blokada podajnika do resetu sterownika
+#define timeToEmergencyFeeder 120000    // czas do awaryjnego zatrzymania podajnika gdy hallotron nie działa - blokada podajnika do resetu sterownika
 #define timeToUpdatescreen    1000      // czas co jaki jest aktualizowany wyświetlacz
 
 #define ostatniPomiarTemp  0
 #define ostatniaZmianaTemp 1
 #define ostatniaTemp       2
 
-#define blowingForce      50  // siła nadmuchu w %
+#define blowingForce      5  // siła nadmuchu od 1 do 10: 1 - 10%, 2 - 20%, 3 - 30%, 10 - 100%
 
 #endif
