@@ -9,12 +9,14 @@ RelaySSR::RelaySSR(int pin)
 
 void RelaySSR::on()
 {
+    if ( this->relayState == true ) return;
     digitalWrite(this->pin, HIGH);
     this->relayState = true;
 }
 
 void RelaySSR::off()
 {
+    if ( this->relayState == false ) return;
     digitalWrite(this->pin, LOW);
     this->relayState = false;
 }

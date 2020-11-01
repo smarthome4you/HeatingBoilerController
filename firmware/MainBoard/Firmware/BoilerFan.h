@@ -22,15 +22,18 @@ void FanPwmCallback()
     if (fanPwmCounter == 0){
       if ( fanPwmState == HIGH) 
       {
-        fanPwmState = LOW; 
         fanPwmCounter = fanPwmLength - fanPwmPower;
-        boilerFan.on();
+        if (fanPwmCounter > 0 ) 
+        {
+          fanPwmState = LOW; 
+          boilerFan.off();
+        }
       }
       else 
       {
         fanPwmState = HIGH;
         fanPwmCounter = fanPwmPower;
-        boilerFan.off();
+        boilerFan.on();
       }
       digitalWrite(LED_BUILTIN, fanPwmState);
     }
@@ -49,9 +52,9 @@ bool FanIsOn()
   return fanIsOn;
 }
 
-void FanSetPower(int power)
+void FanSetSpeed(int power)
 {
-  if ( power < 1) power = 1;
+  if ( power < 2) power = 2;
   if ( power > 10) power = 10;
   
   fanPwmPower = power;

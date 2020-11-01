@@ -9,6 +9,6 @@ Hallotron::Hallotron(int pin)
 
 bool Hallotron::getHallState()
 {
-    if (digitalRead(this->pin) == HIGH) return true;
-    return false;
+    if (digitalRead(this->pin) == HIGH) return false;
+    return true;
 }
