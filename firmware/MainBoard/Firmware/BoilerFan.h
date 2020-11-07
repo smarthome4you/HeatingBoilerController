@@ -9,8 +9,7 @@
 int  fanPwmLength  = 10;
 int  fanPwmCounter = 0;
 int  fanPwmState   = LOW;
-int  fanPwmPower   = 0;
-int  fanPin = 0;
+int  fanPwmSpeed   = 0;
 bool fanIsOn = false;
 RelaySSR boilerFan(pinBoilerFan);
 
@@ -22,7 +21,7 @@ void FanPwmCallback()
     if (fanPwmCounter == 0){
       if ( fanPwmState == HIGH) 
       {
-        fanPwmCounter = fanPwmLength - fanPwmPower;
+        fanPwmCounter = fanPwmLength - fanPwmSpeed;
         if (fanPwmCounter > 0 ) 
         {
           fanPwmState = LOW; 
@@ -32,7 +31,7 @@ void FanPwmCallback()
       else 
       {
         fanPwmState = HIGH;
-        fanPwmCounter = fanPwmPower;
+        fanPwmCounter = fanPwmSpeed;
         boilerFan.on();
       }
       digitalWrite(LED_BUILTIN, fanPwmState);
@@ -43,7 +42,7 @@ void FanPwmCallback()
 void FanSetup()
 {
    pinMode(LED_BUILTIN, OUTPUT);
-   Timer1.initialize(10000);         // 1000000 - second
+   Timer1.initialize(10000);         // 1_000_000 - second
    Timer1.attachInterrupt(FanPwmCallback);
 }
 
@@ -52,13 +51,13 @@ bool FanIsOn()
   return fanIsOn;
 }
 
-void FanSetSpeed(int power)
+void FanSetSpeed(int fanSpeed)
 {
-  if ( power < 2) power = 2;
-  if ( power > 10) power = 10;
+  if ( fanSpeed < 2) fanSpeed = 2;
+  if ( fanSpeed > 10) fanSpeed = 10;
   
-  fanPwmPower = power;
-  fanPwmCounter = power;
+  fanPwmSpeed = fanSpeed;
+  fanPwmCounter = fanSpeed;
 }
 
 void FanOn()

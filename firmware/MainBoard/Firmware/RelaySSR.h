@@ -8,9 +8,11 @@ class RelaySSR
     void on();
     void off();
     bool isOn();
+    unsigned long lastChange();
   private:
     int pin;
     bool relayState = false;
+    unsigned long lastChangeState;
 };
 
 #endif

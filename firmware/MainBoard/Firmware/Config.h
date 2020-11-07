@@ -6,9 +6,9 @@
 #define pinTempBoilerOut             30 // zewnętrzny czujnik temperatury pieca (czujnik przy wyjściu z pieca obiegu wody centralnego ogrzewania) - dodatkowe zabezpieczenie
 #define pinTempWater                 33 // czujnik temperatury wody użytkowej
 #define pinBoilerFeeder              3  // podajnik kotła
-#define pinBoilerCentralHeatingPump  4  // pompa centralnego ogrzewania
-#define pinBoilerWaterPump           5  // pompa ciepłej wody użytkowej
-#define pinBoilerFloorPump           6  // pompa podłogówki
+#define pinBoilerCentralHeatingPump  5  // pompa centralnego ogrzewania
+#define pinBoilerWaterPump           6  // pompa ciepłej wody użytkowej
+#define pinBoilerFloorPump           4  // pompa podłogówki
 #define pinBoilerFeederHall          36 // czujniik halla podajnika kotła
 #define pinBoilerFan                 8  // dmuchawa kotła
 #define pinBuzzer                    39 // buzzer

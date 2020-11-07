@@ -104,14 +104,16 @@ void updateManualScreen(BoilerFeeder *boilerFeeder, RelaySSR *boilerMainPump, Re
 
 void loop(){ 
   myNex.NextionListen();
-  boilerFeeder.process();
-  
+
+  // Get temperature 
   int tempBoilerIn    = tempSensorBoilerIn.getAsInt();
   int tempBoilerOut   = tempSensorBoilerOut.getAsInt();
   int tempBoilerWater = tempSensorWater.getAsInt();
   
+  // Process heating
+  boilerFeeder.process();
+
+  // Process screen
   if      ( myNex.currentPageId == 0 ) updateMainScreen(tempBoilerIn, tempBoilerOut, tempBoilerWater, &boilerFeeder, &boilerMainPump, &boilerWaterPump, &boilerFloorPump);
   else if ( myNex.currentPageId == 1 ) updateManualScreen(&boilerFeeder, &boilerMainPump, &boilerWaterPump, &boilerFloorPump);
-  
-    
 }
