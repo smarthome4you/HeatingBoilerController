@@ -10,30 +10,32 @@
 #include "BoilerFan.h"
 
 /*
- * Firmware dla kotła z podajnikiem szufladkowym
- * Podajnik zawsze musi wykonać pełny obrót!
- */
+   Firmware dla kotła z podajnikiem szufladkowym
+
+*/
 
 
 int temperatura [][3]  = {
-                           {0, 0, 0},   // Temp CO punkt pomiaru 1 (czas ostatniego pomiaru, czas ostatniej zmiany temperatury, temp ostatniego pomiaru)
-                           {0, 0, 0},   // Temp CO punkt pomiaru 2 (czas ostatniego pomiaru, czas ostatniej zmiany temperatury, temp ostatniego pomiaru)
-                           {0, 0, 0},   // Temp CWU (czas ostatniego pomiaru, czas ostatniej zmiany temperatury, temp ostatniego pomiaru)
-                         };
+  {0, 0, 0},   // Temp CO punkt pomiaru 1 (czas ostatniego pomiaru, czas ostatniej zmiany temperatury, temp ostatniego pomiaru)
+  {0, 0, 0},   // Temp CO punkt pomiaru 2 (czas ostatniego pomiaru, czas ostatniej zmiany temperatury, temp ostatniego pomiaru)
+  {0, 0, 0},   // Temp CWU (czas ostatniego pomiaru, czas ostatniej zmiany temperatury, temp ostatniego pomiaru)
+};
 
 int dmuchawa [][1]     = {
-                           {1}     // czas ostaniego załaczenia
-                         };
+  {1}     // czas ostaniego załaczenia
+};
 
 
 int przekaznik [][1]   = {
-                           {1},   // czas ostaniego załączenia pompa CO
-                           {1},   // czas ostaniego załączenia pompa CWU
-                           {1},   // czas ostaniego załączenia pompa ogrzewania podłogowego
-                           {1}    // czas ostaniego załączenia podajnika
-                         };
+  {1},   // czas ostaniego załączenia pompa CO
+  {1},   // czas ostaniego załączenia pompa CWU
+  {1},   // czas ostaniego załączenia pompa ogrzewania podłogowego
+  {1}    // czas ostaniego załączenia podajnika
+};
 
-
+bool globalError              = false;
+int  tempHysteresis           = 5;        // Histereza 
+int  currentTargetTemperature = 55;       // Temperatura docelowa na kotle
 
 Temperature tempSensorBoilerIn(pinTempBoilerIn);
 Temperature tempSensorBoilerOut(pinTempBoilerOut);
@@ -44,15 +46,20 @@ RelaySSR boilerWaterPump(pinBoilerWaterPump);
 RelaySSR boilerFloorPump(pinBoilerFloorPump);
 BoilerFeeder boilerFeeder(pinBoilerFeeder, pinBoilerFeederHall);
 
-EasyNex myNex(Serial1);  
-  
+EasyNex myNex(Serial1);
 
-void setup(){
+
+void setup() {
   Serial.begin(115200);
   myNex.begin(9600);
   myNex.writeStr("page main");
-
   FanSetup();
+  tone(pinBuzzer, 3500, 1000);
+
+  // Starting main pump for prevents discrepancies read signal from temperature sensors.
+  boilerMainPump.on();
+  boilerWaterPump.off();
+  boilerFloorPump.off();
 }
 
 unsigned long timeMainScreen = millis();
@@ -73,7 +80,7 @@ void updateMainScreen(int tempBoilerIn, int tempBoilerOut, int tempBoilerWater, 
   myNex.writeNum("tempBoiler1.val", tempBoilerIn);
   myNex.writeNum("tempBoiler2.val", tempBoilerOut);
   myNex.writeNum("tempWater.val",   tempBoilerWater);
-  
+
   timeMainScreen = millis();
 }
 
@@ -83,37 +90,66 @@ void updateManualScreen(BoilerFeeder *boilerFeeder, RelaySSR *boilerMainPump, Re
 
   byte onBoilerFan    = myNex.readNumber("onBoilerFan.val");
   byte speedBoilerFan = myNex.readNumber("setBoilerFan.val");
-  if(onBoilerFan == 1){ FanOn(); FanSetSpeed(speedBoilerFan); } else FanOff();
+  if (onBoilerFan == 1) {
+    FanOn();
+    FanSetSpeed(speedBoilerFan);
+  } else FanOff();
 
   byte onBoilerFeeder = myNex.readNumber("onBoilerFeeder.val");
-  if(onBoilerFeeder == 1) boilerFeeder->on(); else boilerFeeder->off();
-  
+  if (onBoilerFeeder == 1) boilerFeeder->on(); else boilerFeeder->off();
+
   byte onBoilerPump = myNex.readNumber("onBoilerPump.val");
-  if(onBoilerPump == 1) boilerMainPump->on(); else boilerMainPump->off();
-  
+  if (onBoilerPump == 1) boilerMainPump->on(); else boilerMainPump->off();
+
   byte onWaterPump = myNex.readNumber("onWaterPump.val");
-  if(onWaterPump == 1) boilerWaterPump->on(); else boilerWaterPump->off();
-  
+  if (onWaterPump == 1) boilerWaterPump->on(); else boilerWaterPump->off();
+
   byte onFloorPump = myNex.readNumber("onFloorPump.val");
-  if(onFloorPump == 1) boilerFloorPump->on(); else boilerFloorPump->off();
+  if (onFloorPump == 1) boilerFloorPump->on(); else boilerFloorPump->off();
 
   if ( boilerFeeder->hall->getHallState()) myNex.writeNum("ledBoilerHall.val", 1); else myNex.writeNum("ledBoilerHall.val", 0);
-  
+
   timeMainScreen = millis();
 }
 
-void loop(){ 
-  myNex.NextionListen();
 
-  // Get temperature 
-  int tempBoilerIn    = tempSensorBoilerIn.getAsInt();
-  int tempBoilerOut   = tempSensorBoilerOut.getAsInt();
-  int tempBoilerWater = tempSensorWater.getAsInt();
-  
-  // Process heating
-  boilerFeeder.process();
-
-  // Process screen
-  if      ( myNex.currentPageId == 0 ) updateMainScreen(tempBoilerIn, tempBoilerOut, tempBoilerWater, &boilerFeeder, &boilerMainPump, &boilerWaterPump, &boilerFloorPump);
-  else if ( myNex.currentPageId == 1 ) updateManualScreen(&boilerFeeder, &boilerMainPump, &boilerWaterPump, &boilerFloorPump);
+void updateTargetTemperature()
+{
+  int temp = myNex.readNumber("setBoilerTemp.val");
+  if ( temp > 0 && temp < 75 ) currentTargetTemperature = temp;
 }
+
+void checkTemperatureRange(int tempIn, int tempOut)
+{
+  if ( (abs(abs(tempIn) - abs(tempOut)) > 10) || tempIn > 70 || tempOut > 70)
+  {
+    globalError = true;
+    tone(pinBuzzer, 3500);
+  }
+
+  if (tempIn > 70 || tempOut > 70)
+  {
+    boilerFloorPump.on();
+  } 
+}
+
+void loop() {
+    myNex.NextionListen();
+
+    // Update temperature
+    int tempBoilerIn    = tempSensorBoilerIn.getAsInt();
+    int tempBoilerOut   = tempSensorBoilerOut.getAsInt();
+    int tempBoilerWater = tempSensorWater.getAsInt();
+
+    // Process heating
+    updateTargetTemperature();
+    checkTemperatureRange(tempBoilerIn, tempBoilerOut);
+    boilerFeeder.process();
+
+    
+
+
+    // Process screen
+    if      ( myNex.currentPageId == 0 ) updateMainScreen(tempBoilerIn, tempBoilerOut, tempBoilerWater, &boilerFeeder, &boilerMainPump, &boilerWaterPump, &boilerFloorPump);
+    else if ( myNex.currentPageId == 1 ) updateManualScreen(&boilerFeeder, &boilerMainPump, &boilerWaterPump, &boilerFloorPump);
+  }
