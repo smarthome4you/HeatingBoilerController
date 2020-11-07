@@ -88,23 +88,23 @@ void updateManualScreen(BoilerFeeder *boilerFeeder, RelaySSR *boilerMainPump, Re
 {
   if ( ! (abs(millis() - timeMainScreen) > timeToUpdatescreen )) return;
 
-  byte onBoilerFan    = myNex.readNumber("onBoilerFan.val");
-  byte speedBoilerFan = myNex.readNumber("setBoilerFan.val");
+  int onBoilerFan    = myNex.readNumber("onBoilerFan.val");
+  int speedBoilerFan = myNex.readNumber("fanSpeed.val");
   if (onBoilerFan == 1) {
     FanOn();
     FanSetSpeed(speedBoilerFan);
   } else FanOff();
 
-  byte onBoilerFeeder = myNex.readNumber("onBoilerFeeder.val");
+  int onBoilerFeeder = myNex.readNumber("onBoilerFeeder.val");
   if (onBoilerFeeder == 1) boilerFeeder->on(); else boilerFeeder->off();
 
-  byte onBoilerPump = myNex.readNumber("onBoilerPump.val");
+  int onBoilerPump = myNex.readNumber("onBoilerPump.val");
   if (onBoilerPump == 1) boilerMainPump->on(); else boilerMainPump->off();
 
-  byte onWaterPump = myNex.readNumber("onWaterPump.val");
+  int onWaterPump = myNex.readNumber("onWaterPump.val");
   if (onWaterPump == 1) boilerWaterPump->on(); else boilerWaterPump->off();
 
-  byte onFloorPump = myNex.readNumber("onFloorPump.val");
+  int onFloorPump = myNex.readNumber("onFloorPump.val");
   if (onFloorPump == 1) boilerFloorPump->on(); else boilerFloorPump->off();
 
   if ( boilerFeeder->hall->getHallState()) myNex.writeNum("ledBoilerHall.val", 1); else myNex.writeNum("ledBoilerHall.val", 0);
