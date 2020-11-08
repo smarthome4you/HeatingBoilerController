@@ -15,12 +15,13 @@ BoilerFeeder::BoilerFeeder(int ssrPin, int hallPin)
 
 void BoilerFeeder::process()
 {
-    if (  this->startTime > 0 && abs(millis() - this->startTime) > timeToEmergencyFeeder )
+    if (  this->startTime > 0 && millis() - this->lastStartTime() > timeToEmergencyFeeder )
     {
       this->errorFeeder = true;
       this->isRunning = false;
       this->startStopping = false;
       this->off();
+      this->relay->forceOff();
     }
     if ( this->isRunning ) {
       bool hallState = this->hall->getHallState();
@@ -47,8 +48,15 @@ void BoilerFeeder::process()
     }
 }
 
+
+void BoilerFeeder::shutDown()
+{
+  this->errorFeeder = true;
+}
+
 void BoilerFeeder::on()
 {
+  if ( this->interval > 0 && millis() - this->lastRunTime() < this->interval) return;
   if ( ! this->isRun() && ! this->errorFeeder) {
      this->startTime = millis();
      this->lastRun = millis();
@@ -74,12 +82,25 @@ bool BoilerFeeder::isRun()
   return false;
 }
 
+
+unsigned long BoilerFeeder::lastStartTime()
+{
+  if ( millis() < this->startTime ) this->startTime = millis(); 
+  return this->startTime;
+}
+
 unsigned long BoilerFeeder::lastRunTime()
 {
+  if ( millis() < this->lastRun ) this->lastRun = millis(); 
   return this->lastRun;
 }
 
 bool BoilerFeeder::isError()
 {
   return this->errorFeeder;
+}
+
+void BoilerFeeder::setRunInterval(unsigned long interval)
+{
+  this->interval = interval;
 }

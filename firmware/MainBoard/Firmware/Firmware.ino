@@ -1,7 +1,7 @@
 #include <Wire.h>
 #include <math.h>
-
-#include "config.h"
+#include <avr/wdt.h>
+#include "Config.h"
 #include "EasyNextionLibrary.h" //https://github.com/Seithan/EasyNextionLibrary
 #include "TimerOne.h"
 #include "TemperatureSensor.h"
@@ -9,33 +9,13 @@
 #include "RelaySSR.h"
 #include "BoilerFan.h"
 
-/*
-   Firmware dla kotła z podajnikiem szufladkowym
-
-*/
-
-
-int temperatura [][3]  = {
-  {0, 0, 0},   // Temp CO punkt pomiaru 1 (czas ostatniego pomiaru, czas ostatniej zmiany temperatury, temp ostatniego pomiaru)
-  {0, 0, 0},   // Temp CO punkt pomiaru 2 (czas ostatniego pomiaru, czas ostatniej zmiany temperatury, temp ostatniego pomiaru)
-  {0, 0, 0},   // Temp CWU (czas ostatniego pomiaru, czas ostatniej zmiany temperatury, temp ostatniego pomiaru)
-};
-
-int dmuchawa [][1]     = {
-  {1}     // czas ostaniego załaczenia
-};
-
-
-int przekaznik [][1]   = {
-  {1},   // czas ostaniego załączenia pompa CO
-  {1},   // czas ostaniego załączenia pompa CWU
-  {1},   // czas ostaniego załączenia pompa ogrzewania podłogowego
-  {1}    // czas ostaniego załączenia podajnika
-};
 
 bool globalError              = false;
 int  tempHysteresis           = 5;        // Histereza 
 int  currentTargetTemperature = 55;       // Temperatura docelowa na kotle
+int  targetWaterTemperature   = 50;       // Temperatura wody użytkowej
+bool startHeating             = false;    // Wlaczenie procesu dogrzewania
+unsigned long lastHeatingTime = 0;
 
 Temperature tempSensorBoilerIn(pinTempBoilerIn);
 Temperature tempSensorBoilerOut(pinTempBoilerOut);
@@ -50,6 +30,9 @@ EasyNex myNex(Serial1);
 
 
 void setup() {
+  // Enable watchdog
+  wdt_enable(WDTO_4S);
+  
   Serial.begin(115200);
   myNex.begin(9600);
   myNex.writeStr("page main");
@@ -60,6 +43,7 @@ void setup() {
   boilerMainPump.on();
   boilerWaterPump.off();
   boilerFloorPump.off();
+  
 }
 
 unsigned long timeMainScreen = millis();
@@ -116,7 +100,7 @@ void updateManualScreen(BoilerFeeder *boilerFeeder, RelaySSR *boilerMainPump, Re
 void updateTargetTemperature()
 {
   int temp = myNex.readNumber("setBoilerTemp.val");
-  if ( temp > 0 && temp < 75 ) currentTargetTemperature = temp;
+  if ( temp > 40 && temp < 75 ) currentTargetTemperature = temp;
 }
 
 void checkTemperatureRange(int tempIn, int tempOut)
@@ -124,19 +108,31 @@ void checkTemperatureRange(int tempIn, int tempOut)
   if ( (abs(abs(tempIn) - abs(tempOut)) > 10) || tempIn > 70 || tempOut > 70)
   {
     globalError = true;
+    boilerFeeder.shutDown();
+    FanShutDown();
+    boilerFloorPump.on();
     tone(pinBuzzer, 3500);
   }
+}
 
-  if (tempIn > 70 || tempOut > 70)
-  {
-    boilerFloorPump.on();
-  } 
+bool isTimeToKeepFire()
+{
+  if ( millis() < lastHeatingTime ) {
+    lastHeatingTime = millis();
+    return true;
+  }
+  if ( millis() - lastHeatingTime > 40UL * 60UL * 1000UL) return true;
+  return false;
 }
 
 void loop() {
+    // reset watchdog counter
+    wdt_reset();
+
+    // check nextion event
     myNex.NextionListen();
 
-    // Update temperature
+    // update temperature
     int tempBoilerIn    = tempSensorBoilerIn.getAsInt();
     int tempBoilerOut   = tempSensorBoilerOut.getAsInt();
     int tempBoilerWater = tempSensorWater.getAsInt();
@@ -146,8 +142,43 @@ void loop() {
     checkTemperatureRange(tempBoilerIn, tempBoilerOut);
     boilerFeeder.process();
 
-    
+    // Ciepła woda użytkowa
+    if ( tempBoilerWater < targetWaterTemperature && tempBoilerWater < tempBoilerIn) {
+      boilerWaterPump.on();
+      boilerWaterPump.lockOn(30UL * 60UL * 1000UL); // blokada wlączenia na 30 minut 
+    } else {
+      boilerWaterPump.off();
+    }
 
+    // Wylaczenie wentylatora
+    FanOff();
+
+    // Boiler
+    if ( tempBoilerIn < (currentTargetTemperature - tempHysteresis) || startHeating)
+    {
+      boilerMainPump.on();
+      boilerMainPump.forceOn();
+      boilerFeeder.on();
+      boilerFeeder.setRunInterval(180UL * 1000ULL);
+      FanOn();
+      FanLockOn(30UL * 1000UL);
+      FanSetSpeed(5);
+      startHeating = true;
+      lastHeatingTime = millis();
+    } 
+    if (tempBoilerIn >= currentTargetTemperature){
+      FanOff();
+      startHeating = false;
+    }
+
+    // Przedmuch co 40 minut
+    if (isTimeToKeepFire()) {
+      boilerFeeder.on();
+      boilerFeeder.setRunInterval(180UL * 1000ULL);
+      FanOn();
+      FanLockOn(120UL * 1000UL);
+      lastHeatingTime = millis();
+    }
 
     // Process screen
     if      ( myNex.currentPageId == 0 ) updateMainScreen(tempBoilerIn, tempBoilerOut, tempBoilerWater, &boilerFeeder, &boilerMainPump, &boilerWaterPump, &boilerFloorPump);

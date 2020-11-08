@@ -1,5 +1,6 @@
 #include "Arduino.h"
 #include "RelaySSR.h"
+#include "Config.h"
 
 RelaySSR::RelaySSR(int pin)
 {
@@ -9,26 +10,50 @@ RelaySSR::RelaySSR(int pin)
 
 void RelaySSR::on()
 {
-    if ( this->relayState == true ) return;
+    if ( this->relayStateOn == true ) return;
     digitalWrite(this->pin, HIGH);
-    this->relayState = true;
+    this->relayStateOn = true;
     this->lastChangeState = millis();
+    this->lockOnMilliSeconds = 0;
+}
+
+void RelaySSR::forceOn()
+{
+    digitalWrite(this->pin, HIGH);
+    this->relayStateOn = true;
 }
 
 void RelaySSR::off()
 {
-    if ( this->relayState == false ) return;
+    if ( this->relayStateOn == false ) return;   
+    if ( this->lockOnMilliSeconds > 0 && ( millis() - this->lastChangeState < this->lockOnMilliSeconds)) return;
+    
     digitalWrite(this->pin, LOW);
-    this->relayState = false;
+    this->relayStateOn = false;
     this->lastChangeState = millis();
+    this->lockOnMilliSeconds = 0;
+}
+
+void RelaySSR::forceOff()
+{
+    digitalWrite(this->pin, LOW);
+    this->relayStateOn = false;
+    this->lastChangeState = millis();
+    this->lockOnMilliSeconds = 0;
 }
 
 bool RelaySSR::isOn()
 {
-  return this->relayState;
+  return this->relayStateOn;
 }
 
  unsigned long RelaySSR::lastChange()
  {
+  if ( millis() < this->lastChangeState ) this->lastChangeState = millis(); 
   return this->lastChangeState;
+ }
+
+ void RelaySSR::lockOn(unsigned long milliSeconds)
+ {
+    if ( this->lockOnMilliSeconds == 0 ) this->lockOnMilliSeconds = milliSeconds;
  }

@@ -28,5 +28,6 @@
 #define ostatniaTemp       2
 
 #define blowingForce       5  // siła nadmuchu od 2 do 10: 1 - 10%, 2 - 20%, 3 - 30%, 10 - 100%
+#define maxMillis          4294967296 // Maksymalna wartość millis()
 
 #endif

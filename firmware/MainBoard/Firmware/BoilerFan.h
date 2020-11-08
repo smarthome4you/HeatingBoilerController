@@ -10,7 +10,11 @@ int  fanPwmLength  = 10;
 int  fanPwmCounter = 0;
 int  fanPwmState   = LOW;
 int  fanPwmSpeed   = 0;
+int  fanPowerMax   = 10;
 bool fanIsOn = false;
+bool fanShutDown = false;
+unsigned long fanLastChangeState = 0;
+unsigned long fanLockOnMillis = 0;
 RelaySSR boilerFan(pinBoilerFan);
 
 
@@ -44,6 +48,7 @@ void FanSetup()
    pinMode(LED_BUILTIN, OUTPUT);
    Timer1.initialize(10000);         // 1_000_000 - second
    Timer1.attachInterrupt(FanPwmCallback);
+   digitalWrite(LED_BUILTIN, LOW);
 }
 
 bool FanIsOn()
@@ -51,8 +56,16 @@ bool FanIsOn()
   return fanIsOn;
 }
 
-void FanSetSpeed(int fanSpeed)
+unsigned long FanLastChangeState()
 {
+  if ( millis() < fanLastChangeState ) fanLastChangeState = millis();  
+  return fanLastChangeState;
+}
+
+void FanSetSpeed(int fanSpeed)
+{ 
+  if ( (millis() - FanLastChangeState()) < 4 ) return;
+  
   if ( fanSpeed < 2) fanSpeed = 2;
   if ( fanSpeed > 10) fanSpeed = 10;
   
@@ -62,17 +75,36 @@ void FanSetSpeed(int fanSpeed)
 
 void FanOn()
 {
-  if ( fanIsOn ) return;
+  if ( fanIsOn == true || fanShutDown == true ) return;
+  fanPwmSpeed = fanPowerMax;
+  fanPwmCounter = fanPowerMax;
+  fanLastChangeState = millis();
   fanIsOn = true;
   digitalWrite(LED_BUILTIN, HIGH);
 }
 
 void FanOff()
 {
+  if (fanLockOnMillis > 0 && millis() - FanLastChangeState() < fanLockOnMillis ) return;
   if ( ! fanIsOn ) return;
+  fanLastChangeState = millis();
   fanIsOn = false;
   boilerFan.off();
+  fanPwmSpeed = fanPowerMax;
+  fanPwmCounter = fanPowerMax;
+  fanLockOnMillis = 0;
   digitalWrite(LED_BUILTIN, LOW);
+}
+
+void FanShutDown()
+{
+  fanShutDown = true;
+  digitalWrite(LED_BUILTIN, LOW);
+}
+
+void FanLockOn(unsigned long lockOnMillis)
+{
+  fanLockOnMillis = lockOnMillis;
 }
 
 #endif

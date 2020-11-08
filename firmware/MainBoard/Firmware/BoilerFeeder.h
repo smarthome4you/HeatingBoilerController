@@ -18,6 +18,9 @@ class BoilerFeeder
     bool isRun();
     bool isError();
     unsigned long lastRunTime();
+    unsigned long lastStartTime();
+    void setRunInterval(unsigned long interval);
+    void shutDown();
     void process();
     Hallotron *hall;
     RelaySSR *relay;
@@ -31,6 +34,7 @@ class BoilerFeeder
     int counterHallState = 0;
     unsigned long startTime = 0; // czas pracy podajnika na jednym załaczniu używane w sytuacji gdyby hallotron przestał działać.
     unsigned long lastRun = 0;
+    unsigned long interval = 0;
 };
 
 #endif
