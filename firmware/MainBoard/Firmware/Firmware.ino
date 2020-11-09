@@ -37,9 +37,10 @@ void setup() {
   myNex.begin(9600);
   myNex.writeStr("page main");
   FanSetup();
-  noTone();
+  
   tone(pinBuzzer, 3500, 1000);
-
+  delay(500);
+  noTone(pinBuzzer);
   // Starting main pump for prevents discrepancies read signal from temperature sensors.
   boilerMainPump.on();
   boilerWaterPump.off();
