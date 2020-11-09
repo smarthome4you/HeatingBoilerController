@@ -114,6 +114,8 @@ void checkTemperatureRange(int tempIn, int tempOut)
     FanShutDown();
     boilerFloorPump.on();
     tone(pinBuzzer, 3500);
+    myNex.writeStr("page main");
+    myNex.writeStr("errmessage.txt", "Przekroczona temperatura na czujnikach!!!");
   }
 }
 

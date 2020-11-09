@@ -6,10 +6,12 @@
 
 BoilerFeeder::BoilerFeeder(int ssrPin, int hallPin)
 {
-  this->ssrPin = ssrPin;
-  this->hallPin = hallPin;
-  this->relay = new RelaySSR(this->ssrPin);
-  this->hall = new Hallotron(this->hallPin);
+  this->ssrPin    = ssrPin;
+  this->hallPin   = hallPin;
+  this->relay     = new RelaySSR(this->ssrPin);
+  this->hall      = new Hallotron(this->hallPin);
+  this->startTime = 0;
+  this->lastRun   = 0;
 }
 
 
