@@ -125,12 +125,11 @@ bool isTimeToKeepFire()
   return false;
 }
 
+//Dodac zabepieczenie przed zbyt dlugim rozpalaniem pieca bez efektu wzrostu temperatury
+
 void loop() {
     // reset watchdog counter
     wdt_reset();
-
-    // check nextion event
-    myNex.NextionListen();
 
     // update temperature
     int tempBoilerIn    = tempSensorBoilerIn.getAsInt();
@@ -181,6 +180,7 @@ void loop() {
     }
 
     // Process screen
+    myNex.NextionListen();
     if      ( myNex.currentPageId == 0 ) updateMainScreen(tempBoilerIn, tempBoilerOut, tempBoilerWater, &boilerFeeder, &boilerMainPump, &boilerWaterPump, &boilerFloorPump);
     else if ( myNex.currentPageId == 1 ) updateManualScreen(&boilerFeeder, &boilerMainPump, &boilerWaterPump, &boilerFloorPump);
   }
