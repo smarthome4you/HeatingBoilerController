@@ -9,7 +9,10 @@ Temperature::Temperature(int pin)
   this->sensor.setOneWire(oneWire);
   this->sensor.begin();
   this->tempCursor = 0;
+  this->currTemp = -1000;
   this->time = tempInterval + 1;
+  this->errorCounter = 3;
+  this->iserror = false;
 }
 
 float Temperature::get()
@@ -17,19 +20,33 @@ float Temperature::get()
   if ( ! (abs(millis() - this->time) > tempInterval)) return currTemp;
   this->time = millis();
   this->sensor.requestTemperatures();
-  temp[this->tempCursor] = this->sensor.getTempCByIndex(0);
-  this->currTemp = 0;
-  for (byte pos = 0; pos < 5; pos++) {
-    if( temp[pos] == -1000) temp[pos] = temp[pos -1];
-    this->currTemp += temp[pos];
+  float temperature = this->sensor.getTempCByIndex(0);
+  if ( this->currTemp > -1000 && (temperature == -127 || abs(this->currTemp - temperature) > 2 ))
+  {
+    errorCounter--;
+    return this->currTemp;
+  }
+  
+  if ( temperature > 0 ) {
+    this->errorCounter = 3;
+    temp[this->tempCursor] = temperature;
+    this->currTemp = 0;
+    for (byte pos = 0; pos < 5; pos++) {
+      if( temp[pos] == -1000) temp[pos] = temperature;
+      this->currTemp += temp[pos];
+    }
   }
   this->currTemp = this->currTemp / 5;
   if( this->tempCursor < 4) this->tempCursor++; else this->tempCursor = 0;
-  return currTemp;
+  return this->currTemp;
 }
 
 
-int Temperature::getAsInt()
+bool Temperature::isError()
 {
-  return (int) (this->get()*100);
+  if ( this->errorCounter <= 0) {
+    this->iserror = true;
+    this->errorCounter = 0;
+  }
+  return this->iserror;
 }

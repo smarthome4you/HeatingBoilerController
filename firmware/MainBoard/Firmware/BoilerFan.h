@@ -64,7 +64,7 @@ unsigned long FanLastChangeState()
 
 void FanSetSpeed(int fanSpeed)
 { 
-  if ( (millis() - FanLastChangeState()) < 4 ) return;
+  if ( (millis() - FanLastChangeState()) < 2000 ) return;
   
   if ( fanSpeed < 2) fanSpeed = 2;
   if ( fanSpeed > 10) fanSpeed = 10;

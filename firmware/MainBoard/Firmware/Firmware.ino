@@ -11,7 +11,7 @@
 
 
 bool globalError              = false;
-int  tempHysteresis           = 5;        // Histereza 
+int  tempHysteresis           = 3;        // Histereza 
 int  currentTargetTemperature = 55;       // Temperatura docelowa na kotle
 int  targetWaterTemperature   = 50;       // Temperatura wody użytkowej
 bool startHeating             = false;    // Wlaczenie procesu dogrzewania
@@ -109,10 +109,10 @@ void updateTargetTemperature()
   if ( temp > 40 && temp < 75 ) currentTargetTemperature = temp;
 }
 
-void checkTemperatureRange(int tempIn, int tempOut)
+void checkTemperatureRange(int tempIn, bool tempInError, int tempOut, bool tempOutError)
 {
   return;
-  if ( (abs(abs(tempIn) - abs(tempOut)) > 20) || tempIn > 70 || tempOut > 70 || tempIn < 0 || tempOut < 0 )
+  if ( (abs(abs(tempIn) - abs(tempOut)) > 20) || tempIn > 70 || tempOut > 70 || tempInError == true || tempOutError == true )
   {
     globalError = true;
     boilerFeeder.shutDown();
@@ -158,10 +158,10 @@ void loop() {
     float tempBoilerIn    = tempSensorBoilerIn.get();
     float tempBoilerOut   = tempSensorBoilerOut.get();
     float tempBoilerWater = tempSensorWater.get();
-  
+
     // Process heating
     updateTargetTemperature();
-    checkTemperatureRange(tempBoilerIn, tempBoilerOut);
+    checkTemperatureRange(tempBoilerIn, tempSensorBoilerIn.isError(), tempBoilerOut, tempSensorBoilerOut.isError());
     boilerFeeder.process();
 
     // Ciepła woda użytkowa
