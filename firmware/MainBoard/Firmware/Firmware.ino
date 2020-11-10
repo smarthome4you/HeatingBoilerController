@@ -53,6 +53,8 @@ void updateMainScreen(float tempBoilerIn, float tempBoilerOut, float tempBoilerW
 {
   if ( ! (abs(millis() - timeMainScreen) > timeToUpdatescreen )) return;
 
+  myNex.NextionListen();
+
   if ( boilerFeeder->hall->getHallState()) myNex.writeNum("ledHall.val",   1);                else myNex.writeNum("ledHall.val",      0);
   if ( boilerFeeder->isRun())              myNex.writeNum("ledFeeder.val", 1);                else myNex.writeNum("ledFeeder.val",    0);
   if ( boilerFeeder->isError())            myNex.writeStr("feederError.txt", "Feeder Error"); else myNex.writeStr("feederError.txt", "");
@@ -201,7 +203,6 @@ void loop() {
     }
 
     // Process screen
-    myNex.NextionListen();
     if      ( myNex.currentPageId == 0 ) updateMainScreen(tempBoilerIn, tempBoilerOut, tempBoilerWater, &boilerFeeder, &boilerMainPump, &boilerWaterPump, &boilerFloorPump);
     else if ( myNex.currentPageId == 1 ) updateManualScreen(&boilerFeeder, &boilerMainPump, &boilerWaterPump, &boilerFloorPump);
   }
