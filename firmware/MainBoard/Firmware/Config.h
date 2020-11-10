@@ -2,7 +2,7 @@
 #ifndef config_h
 #define config_h
 
-#define pinTempBoilerIn              25 //27 // wewnętrzny czujnik temperatury pieca (czujnik osadzony wewnątrz kotła) - podstawowy czujnik temperatury kotła
+#define pinTempBoilerIn              27 //25 // wewnętrzny czujnik temperatury pieca (czujnik osadzony wewnątrz kotła) - podstawowy czujnik temperatury kotła
 #define pinTempBoilerOut             30 // zewnętrzny czujnik temperatury pieca (czujnik przy wyjściu z pieca obiegu wody centralnego ogrzewania) - dodatkowe zabezpieczenie
 #define pinTempWater                 33 // czujnik temperatury wody użytkowej
 #define pinBoilerFeeder              3  // podajnik kotła
@@ -17,7 +17,7 @@
 
 
 
-#define tempInterval               2000      // co jaki czas maja byc odczytywane czujniki temperatury 10000 = 1 sec
+#define tempInterval               1000      // co jaki czas maja byc odczytywane czujniki temperatury 10000 = 1 sec
 #define timeToStopFeeder           2000      // opoznienie zatrzymania podajnika
 #define timeToEmergencyFeeder      180000UL  // czas do awaryjnego zatrzymania podajnika gdy hallotron nie działa - blokada podajnika do resetu sterownika
 #define timeToUpdatescreen         1000      // czas co jaki jest aktualizowany wyświetlacz

@@ -45,7 +45,7 @@ void setup() {
   boilerMainPump.on();
   boilerWaterPump.off();
   boilerFloorPump.off();
-  
+  FanOff();
 }
 
 unsigned long timeMainScreen = millis();
@@ -68,8 +68,9 @@ void updateMainScreen(float tempBoilerIn, float tempBoilerOut, float tempBoilerW
   myNex.writeNum("tempWater.val",   (int)(tempBoilerWater * 100));
 
   int btnFloorHeat = myNex.readNumber("btnFloorHeat.val");
+  Serial.println(btnFloorHeat);
   if (btnFloorHeat == 1) boilerFloorPump->on(); else boilerFloorPump->off();
-
+  
 
   timeMainScreen = millis();
 }
@@ -105,14 +106,14 @@ void updateManualScreen(BoilerFeeder *boilerFeeder, RelaySSR *boilerMainPump, Re
 
 void updateTargetTemperature()
 {
+  if ( ! (abs(millis() - timeMainScreen) > timeToUpdatescreen )) return;
   int temp = myNex.readNumber("setBoilerTemp.val");
   if ( temp > 40 && temp < 75 ) currentTargetTemperature = temp;
 }
 
 void checkTemperatureRange(int tempIn, bool tempInError, int tempOut, bool tempOutError)
 {
-  return;
-  if ( (abs(abs(tempIn) - abs(tempOut)) > 20) || tempIn > 70 || tempOut > 70 || tempInError == true || tempOutError == true )
+  if ( (abs(abs(tempIn) - abs(tempOut)) > 20) || tempIn > 70 || tempOut > 70 || tempIn < 0 || tempOut < 0 || tempInError == true || tempOutError == true )
   {
     globalError = true;
     boilerFeeder.shutDown();
@@ -121,7 +122,7 @@ void checkTemperatureRange(int tempIn, bool tempInError, int tempOut, bool tempO
     tone(pinBuzzer, 3500);
     if (myNex.currentPageId != 3) {
        myNex.writeStr("page error");
-      // myNex.writeStr("errmessage.txt", "Przekroczona temperatura na czujnikach!!!" + tempIn + " Out:" + tempOut);
+       myNex.writeStr("errmessage.txt", "Przekroczona temperatura na czujnikach!!!");// + tempIn + " Out:" + tempOut);
     }
   }
   else if ( boilerFeeder.isError() )
@@ -133,7 +134,7 @@ void checkTemperatureRange(int tempIn, bool tempInError, int tempOut, bool tempO
     tone(pinBuzzer, 3500);
     if (myNex.currentPageId != 3) {
        myNex.writeStr("page error");
-       ////myNex.writeStr("errmessage.txt", "Problem z podajnikiem!!!  In:" + tempIn + " Out:" + tempOut);
+       myNex.writeStr("errmessage.txt", "Problem z podajnikiem!!!"); //  In:" + tempIn + " Out:" + tempOut);
     }
   }
 }
@@ -171,9 +172,6 @@ void loop() {
     } else {
       boilerWaterPump.off();
     }
-
-    // Wylaczenie wentylatora
-    FanOff();
 
     // Boiler
     if ( tempBoilerIn < (currentTargetTemperature - tempHysteresis) || startHeating)

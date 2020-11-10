@@ -9,6 +9,7 @@ class Temperature
   public:
     Temperature(int pin);
     float get();
+    unsigned long lastReadMillis();
     bool isError();
   private:
     DallasTemperature sensor;
@@ -18,7 +19,7 @@ class Temperature
     byte tempCursor =0;
     int errorCounter = 3;
     bool iserror = false;
-    unsigned long time;
+    unsigned long lastRead;
 };
 
 #endif
