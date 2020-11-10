@@ -23,8 +23,8 @@ unsigned long lastHeatingTime = 0;
 //Temperature tempSensorWater(25);
 
 Temperature tempSensorBoilerIn(pinTempBoilerIn);
-Temperature tempSensorBoilerOut(pinTempBoilerIn);
-Temperature tempSensorWater(pinTempBoilerIn);
+Temperature tempSensorBoilerOut(pinTempBoilerOut);
+Temperature tempSensorWater(pinTempWater);
 
 RelaySSR boilerMainPump(pinBoilerCentralHeatingPump);
 RelaySSR boilerWaterPump(pinBoilerWaterPump);
