@@ -21,7 +21,7 @@ float Temperature::get()
   this->time = millis();
   this->sensor.requestTemperatures();
   float temperature = this->sensor.getTempCByIndex(0);
-  if ( this->currTemp > -1000 && (temperature == -127 || abs(this->currTemp - temperature) > 2 ))
+  if ( this->currTemp > -1000 && (temperature == -127 || abs(this->currTemp - temperature) > 4 ))
   {
     errorCounter--;
     return this->currTemp;
