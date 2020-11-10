@@ -8,6 +8,7 @@ class Temperature
 {
   public:
     Temperature(int pin);
+    void init();
     float get();
     unsigned long lastReadMillis();
     bool isError();

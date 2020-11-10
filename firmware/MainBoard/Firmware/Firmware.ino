@@ -18,13 +18,13 @@ bool startHeating             = false;    // Wlaczenie procesu dogrzewania
 unsigned long lastHeatingTime = 0;
 
 
-Temperature tempSensorBoilerIn(pinTempBoilerIn);
-Temperature tempSensorBoilerOut(pinTempBoilerOut);
-Temperature tempSensorWater(pinTempWater);
+//Temperature tempSensorBoilerIn(25);
+//Temperature tempSensorBoilerOut(25);
+//Temperature tempSensorWater(25);
 
-//Temperature tempSensorBoilerIn(pinTempBoilerIn);
-//Temperature tempSensorBoilerOut(pinTempBoilerIn);
-//Temperature tempSensorWater(pinTempBoilerIn);
+Temperature tempSensorBoilerIn(pinTempBoilerIn);
+Temperature tempSensorBoilerOut(pinTempBoilerIn);
+Temperature tempSensorWater(pinTempBoilerIn);
 
 RelaySSR boilerMainPump(pinBoilerCentralHeatingPump);
 RelaySSR boilerWaterPump(pinBoilerWaterPump);
@@ -41,6 +41,11 @@ void setup() {
   Serial.begin(115200);
   myNex.begin(9600);
   myNex.writeStr("page main");
+
+  tempSensorBoilerIn.init();
+  tempSensorBoilerOut.init();
+  tempSensorWater.init();
+  
   FanSetup();
   
   tone(pinBuzzer, 3500);

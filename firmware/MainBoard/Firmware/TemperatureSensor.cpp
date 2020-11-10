@@ -8,12 +8,17 @@ Temperature::Temperature(int pin)
   this->oneWire = new OneWire(pin);
   this->sensor.setOneWire(oneWire);
   this->sensor.begin();
-  this->sensor.requestTemperatures();
-  this->currTemp = this->sensor.getTempCByIndex(0);
   this->tempCursor = 0;
   this->lastRead = tempInterval;
   this->errorCounter = 3;
   this->iserror = false;
+}
+
+
+void Temperature::init()
+{
+  this->sensor.requestTemperatures();
+  this->currTemp = this->sensor.getTempCByIndex(0);
 }
 
 float Temperature::get()
