@@ -17,7 +17,7 @@
 
 
 
-#define tempInterval               1000      // co jaki czas maja byc odczytywane czujniki temperatury 10000 = 1 sec
+#define tempInterval               2000      // co jaki czas maja byc odczytywane czujniki temperatury 10000 = 1 sec
 #define timeToStopFeeder           2000      // opoznienie zatrzymania podajnika
 #define timeToEmergencyFeeder      180000UL  // czas do awaryjnego zatrzymania podajnika gdy hallotron nie działa - blokada podajnika do resetu sterownika
 #define timeToUpdatescreen         1000      // czas co jaki jest aktualizowany wyświetlacz

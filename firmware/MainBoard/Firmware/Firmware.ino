@@ -17,9 +17,14 @@ int  targetWaterTemperature   = 50;       // Temperatura wody użytkowej
 bool startHeating             = false;    // Wlaczenie procesu dogrzewania
 unsigned long lastHeatingTime = 0;
 
+
 Temperature tempSensorBoilerIn(pinTempBoilerIn);
 Temperature tempSensorBoilerOut(pinTempBoilerOut);
 Temperature tempSensorWater(pinTempWater);
+
+//Temperature tempSensorBoilerIn(pinTempBoilerIn);
+//Temperature tempSensorBoilerOut(pinTempBoilerIn);
+//Temperature tempSensorWater(pinTempBoilerIn);
 
 RelaySSR boilerMainPump(pinBoilerCentralHeatingPump);
 RelaySSR boilerWaterPump(pinBoilerWaterPump);
@@ -52,8 +57,6 @@ unsigned long timeMainScreen = millis();
 void updateMainScreen(float tempBoilerIn, float tempBoilerOut, float tempBoilerWater, BoilerFeeder *boilerFeeder, RelaySSR *boilerMainPump, RelaySSR *boilerWaterPump, RelaySSR *boilerFloorPump)
 {
   if ( ! (abs(millis() - timeMainScreen) > timeToUpdatescreen )) return;
-
-  myNex.NextionListen();
 
   if ( boilerFeeder->hall->getHallState()) myNex.writeNum("ledHall.val",   1);                else myNex.writeNum("ledHall.val",      0);
   if ( boilerFeeder->isRun())              myNex.writeNum("ledFeeder.val", 1);                else myNex.writeNum("ledFeeder.val",    0);
@@ -115,6 +118,7 @@ void updateTargetTemperature()
 
 void checkTemperatureRange(int tempIn, bool tempInError, int tempOut, bool tempOutError)
 {
+  return;
   if ( (abs(abs(tempIn) - abs(tempOut)) > 20) || tempIn > 70 || tempOut > 70 || tempIn < 0 || tempOut < 0 || tempInError == true || tempOutError == true )
   {
     globalError = true;
@@ -152,11 +156,17 @@ bool isTimeToKeepFire()
 }
 
 //Dodac zabepieczenie przed zbyt dlugim rozpalaniem pieca bez efektu wzrostu temperatury
+void loop_test() {
+  wdt_reset();
+  FanOn();
+  FanSetSpeed(5);
+  Serial.println(fanPwmSpeed);
+}
 
 void loop() {
     // reset watchdog counter
     wdt_reset();
-
+    
     // update temperature
     float tempBoilerIn    = tempSensorBoilerIn.get();
     float tempBoilerOut   = tempSensorBoilerOut.get();
@@ -203,6 +213,7 @@ void loop() {
     }
 
     // Process screen
+    myNex.NextionListen();
     if      ( myNex.currentPageId == 0 ) updateMainScreen(tempBoilerIn, tempBoilerOut, tempBoilerWater, &boilerFeeder, &boilerMainPump, &boilerWaterPump, &boilerFloorPump);
     else if ( myNex.currentPageId == 1 ) updateManualScreen(&boilerFeeder, &boilerMainPump, &boilerWaterPump, &boilerFloorPump);
   }

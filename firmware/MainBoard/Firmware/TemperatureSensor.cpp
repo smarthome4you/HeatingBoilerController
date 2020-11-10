@@ -22,7 +22,6 @@ float Temperature::get()
   this->lastRead = millis();
   this->sensor.requestTemperatures();
   float temperature = this->sensor.getTempCByIndex(0);
-  Serial.println(temperature);
   if ( temperature == -127 || abs(this->currTemp - temperature) > 4 )
   {
     errorCounter--;

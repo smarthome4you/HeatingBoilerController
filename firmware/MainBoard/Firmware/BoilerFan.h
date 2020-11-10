@@ -7,9 +7,9 @@
 #include "RelaySSR.h"
 
 int  fanPwmLength  = 10;
-int  fanPwmCounter = 0;
+int  fanPwmCounter = 10;
 int  fanPwmState   = LOW;
-int  fanPwmSpeed   = 0;
+int  fanPwmSpeed   = 10;
 int  fanPowerMax   = 10;
 bool fanIsOn = false;
 bool fanShutDown = false;
@@ -22,7 +22,7 @@ void FanPwmCallback()
 {
   if ( fanIsOn ) {
     fanPwmCounter--;
-    if (fanPwmCounter == 0){
+    if (fanPwmCounter <= 0){
       if ( fanPwmState == HIGH) 
       {
         fanPwmCounter = fanPwmLength - fanPwmSpeed;
@@ -70,7 +70,6 @@ void FanSetSpeed(int fanSpeed)
   if ( fanSpeed > 10) fanSpeed = 10;
   
   fanPwmSpeed = fanSpeed;
-  fanPwmCounter = fanSpeed;
 }
 
 void FanOn()
