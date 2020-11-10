@@ -118,7 +118,6 @@ void updateTargetTemperature()
 
 void checkTemperatureRange(int tempIn, bool tempInError, int tempOut, bool tempOutError)
 {
-  return;
   if ( (abs(abs(tempIn) - abs(tempOut)) > 20) || tempIn > 70 || tempOut > 70 || tempIn < 0 || tempOut < 0 || tempInError == true || tempOutError == true )
   {
     globalError = true;
