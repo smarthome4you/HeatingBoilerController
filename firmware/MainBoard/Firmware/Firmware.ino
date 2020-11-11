@@ -13,7 +13,7 @@
 bool globalError              = false;
 int  tempHysteresis           = 3;        // Histereza 
 int  currentTargetTemperature = 55;       // Temperatura docelowa na kotle
-int  targetWaterTemperature   = 50;       // Temperatura wody użytkowej
+int  targetWaterTemperature   = 60;       // Temperatura wody użytkowej
 bool startHeating             = false;    // Wlaczenie procesu dogrzewania
 unsigned long lastHeatingTime = 0;
 
@@ -77,7 +77,6 @@ void updateMainScreen(float tempBoilerIn, float tempBoilerOut, float tempBoilerW
   myNex.writeNum("tempWater.val",   (int)(tempBoilerWater * 100));
 
   int onFloorHeat = myNex.readNumber("onFloorHeat.val");
-  Serial.println(onFloorHeat);
   if (onFloorHeat == 1) boilerFloorPump->on(); else boilerFloorPump->off();
   
 
