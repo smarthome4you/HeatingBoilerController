@@ -26,7 +26,7 @@ Temperature tempSensorBoilerIn(pinTempBoilerIn);
 Temperature tempSensorBoilerOut(pinTempBoilerOut);
 Temperature tempSensorWater(pinTempWater);
 
-RelaySSR boilerMainPump(pinBoilerCentralHeatingPump);
+RelaySSR boilerMainPump(pinBoilerCentralHeatingPump); 
 RelaySSR boilerWaterPump(pinBoilerWaterPump);
 RelaySSR boilerFloorPump(pinBoilerFloorPump);
 BoilerFeeder boilerFeeder(pinBoilerFeeder, pinBoilerFeederHall);
@@ -65,7 +65,6 @@ void updateMainScreen(float tempBoilerIn, float tempBoilerOut, float tempBoilerW
 
   if ( boilerFeeder->hall->getHallState()) myNex.writeNum("ledHall.val",   1);                else myNex.writeNum("ledHall.val",      0);
   if ( boilerFeeder->isRun())              myNex.writeNum("ledFeeder.val", 1);                else myNex.writeNum("ledFeeder.val",    0);
-  if ( boilerFeeder->isError())            myNex.writeStr("feederError.txt", "Feeder Error"); else myNex.writeStr("feederError.txt", "");
 
   if ( boilerMainPump->isOn())  myNex.writeNum("ledBoilerPump.val", 1); else myNex.writeNum("ledBoilerPump.val", 0);
   if ( boilerWaterPump->isOn()) myNex.writeNum("ledWaterPump.val",  1); else myNex.writeNum("ledWaterPump.val",  0);
@@ -77,9 +76,9 @@ void updateMainScreen(float tempBoilerIn, float tempBoilerOut, float tempBoilerW
   myNex.writeNum("tempBoiler2.val", (int)(tempBoilerOut * 100));
   myNex.writeNum("tempWater.val",   (int)(tempBoilerWater * 100));
 
-  int btnFloorHeat = myNex.readNumber("btnFloorHeat.val");
-  Serial.println(btnFloorHeat);
-  if (btnFloorHeat == 1) boilerFloorPump->on(); else boilerFloorPump->off();
+  int onFloorHeat = myNex.readNumber("onFloorHeat.val");
+  Serial.println(onFloorHeat);
+  if (onFloorHeat == 1) boilerFloorPump->on(); else boilerFloorPump->off();
   
 
   timeMainScreen = millis();
@@ -121,7 +120,7 @@ void updateTargetTemperature()
   if ( temp > 40 && temp < 75 ) currentTargetTemperature = temp;
 }
 
-void checkTemperatureRange(int tempIn, bool tempInError, int tempOut, bool tempOutError)
+void checkTemperatureRange(float tempIn, bool tempInError, float tempOut, bool tempOutError, float tempBoilerWater)
 {
   if ( (abs(abs(tempIn) - abs(tempOut)) > 20) || tempIn > 70 || tempOut > 70 || tempIn < 0 || tempOut < 0 || tempInError == true || tempOutError == true )
   {
@@ -132,7 +131,10 @@ void checkTemperatureRange(int tempIn, bool tempInError, int tempOut, bool tempO
     tone(pinBuzzer, 3500);
     if (myNex.currentPageId != 3) {
        myNex.writeStr("page error");
-       myNex.writeStr("errmessage.txt", "Przekroczona temperatura na czujnikach!!!");// + tempIn + " Out:" + tempOut);
+       myNex.writeStr("errmessage.txt", "Przekroczona temperatura na czujnikach!!!");
+       myNex.writeNum("errorTempIn.val", (int) (tempIn * 100));
+       myNex.writeNum("errorTempOut.val", (int) (tempOut * 100));
+       myNex.writeNum("errorTempWater.val", (int) (tempBoilerWater * 100));
     }
   }
   else if ( boilerFeeder.isError() )
@@ -144,7 +146,10 @@ void checkTemperatureRange(int tempIn, bool tempInError, int tempOut, bool tempO
     tone(pinBuzzer, 3500);
     if (myNex.currentPageId != 3) {
        myNex.writeStr("page error");
-       myNex.writeStr("errmessage.txt", "Problem z podajnikiem!!!"); //  In:" + tempIn + " Out:" + tempOut);
+       myNex.writeStr("errmessage.txt", "Problem z podajnikiem!!!");
+       myNex.writeNum("errorTempIn.val", (int) (tempIn * 100));
+       myNex.writeNum("errorTempOut.val", (int) (tempOut * 100));
+       myNex.writeNum("errorTempWater.val", (int) (tempBoilerWater * 100));
     }
   }
 }
@@ -178,7 +183,7 @@ void loop() {
 
     // Process heating
     updateTargetTemperature();
-    checkTemperatureRange(tempBoilerIn, tempSensorBoilerIn.isError(), tempBoilerOut, tempSensorBoilerOut.isError());
+    checkTemperatureRange(tempBoilerIn, tempSensorBoilerIn.isError(), tempBoilerOut, tempSensorBoilerOut.isError(), tempBoilerWater);
     boilerFeeder.process();
 
     // Ciepła woda użytkowa
@@ -197,25 +202,26 @@ void loop() {
       boilerFeeder.on();
       boilerFeeder.setRunInterval(180UL * 1000ULL);
       FanOn();
-      FanLockOn(30UL * 1000UL);
       FanSetSpeed(5);
+      FanLockOn(15UL * 1000UL);
       startHeating = true;
       lastHeatingTime = millis();
-    } 
-    if (tempBoilerIn >= currentTargetTemperature){
-      FanOff();
-      startHeating = false;
-    }
-
-    // Przedmuch co 40 minut
-    if (isTimeToKeepFire()) {
+    } else if (isTimeToKeepFire()) {
+      // Przedmuch co 40 minut
       boilerFeeder.on();
       boilerFeeder.setRunInterval(180UL * 1000ULL);
       FanOn();
       FanLockOn(120UL * 1000UL);
       lastHeatingTime = millis();
-    }
+    } else if ( FanIsLockOff() ){
+      FanOff();
+    } 
 
+    if (tempBoilerIn >= currentTargetTemperature){
+      FanOff();
+      startHeating = false;
+    }
+    
     // Process screen
     myNex.NextionListen();
     if      ( myNex.currentPageId == 0 ) updateMainScreen(tempBoilerIn, tempBoilerOut, tempBoilerWater, &boilerFeeder, &boilerMainPump, &boilerWaterPump, &boilerFloorPump);

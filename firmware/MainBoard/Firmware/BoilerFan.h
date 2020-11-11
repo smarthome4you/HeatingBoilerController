@@ -43,6 +43,7 @@ void FanPwmCallback()
   }
 }
 
+
 void FanSetup()
 {
    pinMode(LED_BUILTIN, OUTPUT);
@@ -51,10 +52,12 @@ void FanSetup()
    digitalWrite(LED_BUILTIN, LOW);
 }
 
+
 bool FanIsOn()
 {
   return fanIsOn;
 }
+
 
 unsigned long FanLastChangeState()
 {
@@ -62,9 +65,10 @@ unsigned long FanLastChangeState()
   return fanLastChangeState;
 }
 
+
 void FanSetSpeed(int fanSpeed)
 { 
-  if ( (millis() - FanLastChangeState()) < 2000 ) return;
+  if ( (millis() - FanLastChangeState()) < 3000 ) return;
   
   if ( fanSpeed < 2) fanSpeed = 2;
   if ( fanSpeed > 10) fanSpeed = 10;
@@ -72,15 +76,20 @@ void FanSetSpeed(int fanSpeed)
   fanPwmSpeed = fanSpeed;
 }
 
+
 void FanOn()
 {
   if ( fanIsOn == true || fanShutDown == true ) return;
-  fanPwmSpeed = fanPowerMax;
-  fanPwmCounter = fanPowerMax;
+  if ( millis() - FanLastChangeState() > 500 )
+  {
+     fanPwmSpeed = fanPowerMax;
+     fanPwmCounter = fanPowerMax;
+  }
   fanLastChangeState = millis();
   fanIsOn = true;
   digitalWrite(LED_BUILTIN, HIGH);
 }
+
 
 void FanOff()
 {
@@ -89,21 +98,30 @@ void FanOff()
   fanLastChangeState = millis();
   fanIsOn = false;
   boilerFan.off();
-  fanPwmSpeed = fanPowerMax;
-  fanPwmCounter = fanPowerMax;
   fanLockOnMillis = 0;
   digitalWrite(LED_BUILTIN, LOW);
 }
 
+
+bool FanIsLockOff()
+{
+  if (fanLockOnMillis > 0 && millis() - FanLastChangeState() < fanLockOnMillis ) return false;
+  return true;
+}
+
+
 void FanShutDown()
 {
   fanShutDown = true;
+  boilerFan.off();
+  boilerFan.forceOff();
   digitalWrite(LED_BUILTIN, LOW);
 }
+
 
 void FanLockOn(unsigned long lockOnMillis)
 {
   fanLockOnMillis = lockOnMillis;
-}
+} 
 
 #endif
