@@ -18,13 +18,13 @@ bool startHeating             = false;    // Wlaczenie procesu dogrzewania
 unsigned long lastHeatingTime = 0;
 
 
-//Temperature tempSensorBoilerIn(25);
-//Temperature tempSensorBoilerOut(25);
-//Temperature tempSensorWater(25);
+Temperature tempSensorBoilerIn(25);
+Temperature tempSensorBoilerOut(25);
+Temperature tempSensorWater(25);
 
-Temperature tempSensorBoilerIn(pinTempBoilerIn);
-Temperature tempSensorBoilerOut(pinTempBoilerOut);
-Temperature tempSensorWater(pinTempWater);
+//Temperature tempSensorBoilerIn(pinTempBoilerIn);
+//Temperature tempSensorBoilerOut(pinTempBoilerOut);
+//Temperature tempSensorWater(pinTempWater);
 
 RelaySSR boilerMainPump(pinBoilerCentralHeatingPump); 
 RelaySSR boilerWaterPump(pinBoilerWaterPump);

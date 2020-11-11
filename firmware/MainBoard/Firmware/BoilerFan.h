@@ -13,14 +13,20 @@ int  fanPwmSpeed   = 10;
 int  fanPowerMax   = 10;
 bool fanIsOn = false;
 bool fanShutDown = false;
-unsigned long fanLastChangeState = 0;
+unsigned long fanLastOn = 0;
 unsigned long fanLockOnMillis = 0;
 RelaySSR boilerFan(pinBoilerFan);
 
 
+bool FanIsOn()
+{
+  return fanIsOn;
+}
+
+
 void FanPwmCallback()
 {
-  if ( fanIsOn ) {
+  if ( FanIsOn() && fanShutDown == false ) {
     fanPwmCounter--;
     if (fanPwmCounter <= 0){
       if ( fanPwmState == HIGH) 
@@ -53,22 +59,16 @@ void FanSetup()
 }
 
 
-bool FanIsOn()
+unsigned long FanLastOn()
 {
-  return fanIsOn;
-}
-
-
-unsigned long FanLastChangeState()
-{
-  if ( millis() < fanLastChangeState ) fanLastChangeState = millis();  
-  return fanLastChangeState;
+  if ( millis() < fanLastOn ) fanLastOn = millis();  
+  return fanLastOn;
 }
 
 
 void FanSetSpeed(int fanSpeed)
 { 
-  if ( (millis() - FanLastChangeState()) < 3000 ) return;
+  if ( (millis() - FanLastOn()) < 3000 ) return;
   
   if ( fanSpeed < 2) fanSpeed = 2;
   if ( fanSpeed > 10) fanSpeed = 10;
@@ -79,33 +79,30 @@ void FanSetSpeed(int fanSpeed)
 
 void FanOn()
 {
-  if ( fanIsOn == true || fanShutDown == true ) return;
-  if ( millis() - FanLastChangeState() > 500 )
+  if ( FanIsOn() == true || fanShutDown == true ) return;
+  if ( millis() - FanLastOn() > 500UL )
   {
      fanPwmSpeed = fanPowerMax;
      fanPwmCounter = fanPowerMax;
   }
-  fanLastChangeState = millis();
+  fanLastOn = millis();
   fanIsOn = true;
-  digitalWrite(LED_BUILTIN, HIGH);
 }
 
 
 void FanOff()
 {
-  if (fanLockOnMillis > 0 && millis() - FanLastChangeState() < fanLockOnMillis ) return;
-  if ( ! fanIsOn ) return;
-  fanLastChangeState = millis();
+  if (fanLockOnMillis > 0 && millis() - FanLastOn() < fanLockOnMillis ) return;
+  if ( fanIsOn == false ) return;
   fanIsOn = false;
   boilerFan.off();
-  fanLockOnMillis = 0;
-  digitalWrite(LED_BUILTIN, LOW);
+  fanLockOnMillis = 0;;
 }
 
 
 bool FanIsLockOff()
 {
-  if (fanLockOnMillis > 0 && millis() - FanLastChangeState() < fanLockOnMillis ) return false;
+  if (fanLockOnMillis > 0 && millis() - FanLastOn() < fanLockOnMillis ) return false;
   return true;
 }
 
@@ -113,9 +110,9 @@ bool FanIsLockOff()
 void FanShutDown()
 {
   fanShutDown = true;
+  fanIsOn = false;
   boilerFan.off();
   boilerFan.forceOff();
-  digitalWrite(LED_BUILTIN, LOW);
 }
 
 
