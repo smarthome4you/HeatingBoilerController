@@ -17,9 +17,9 @@ class FloorHeating
   private:
   RelaySSR *relay;
   int ssrPin;
-  int onLength;
-  int offLength;
   bool lock = false;
+  unsigned long onLength;
+  unsigned long offLength;
   unsigned long startTime = 0;
   unsigned long lastRun = 0;
 };

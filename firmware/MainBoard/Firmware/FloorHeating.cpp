@@ -11,14 +11,15 @@ FloorHeating::FloorHeating(int ssrPin)
   this->relay       = new RelaySSR(this->ssrPin);
   this->startTime   = millis();
   this->lastRun     = millis();
-  this->onLength    = 0;
-  this->offLength   = 0;
+  this->onLength    = 5;
+  this->offLength   = 240;
 }
 
+  
 void FloorHeating::setHeatingPeriods(int onLength, int offLength)
 {
-  this->onLength = onLength * 1000 * 60; //minute to millis
-  this->offLength = offLength * 1000 * 60; //minute to millis
+  this->onLength  = ((unsigned long) onLength)  * 1000 * 60; //minute to millis
+  this->offLength = ((unsigned long) offLength) * 1000 * 60; //minute to millis
 }
 
 void FloorHeating::process()
