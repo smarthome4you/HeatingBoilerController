@@ -90,15 +90,15 @@ void updateMainScreen(float tempBoilerIn, float tempBoilerOut, float tempBoilerW
   myNex.writeNum("tempBoiler2.val", (int)(tempBoilerOut * 100));
   myNex.writeNum("tempWater.val",   (int)(tempBoilerWater * 100));
 
-  int onFloorHeatMin = myNex.readNumber("onFloorHeatMin.val");
-  int onFloorHeatMid = myNex.readNumber("onFloorHeatMid.val");
-  int onFloorHeatMax = myNex.readNumber("onFloorHeatMax.val");
+  int onFloorHeatMin = myNex.readNumber("floorHeatMin.val");
+  int onFloorHeatMid = myNex.readNumber("floorHeatMid.val");
+  int onFloorHeatMax = myNex.readNumber("floorHeatMax.val");
 
   if      (onFloorHeatMin == 1) floorHeatingPump->setHeatingPeriods(20, 220);// 2h
   else if (onFloorHeatMid == 1) floorHeatingPump->setHeatingPeriods(20, 140);// 3h
   else if (onFloorHeatMax == 1) floorHeatingPump->setHeatingPeriods(20, 100);// 4h
   else floorHeatingPump->setHeatingPeriods(5, 240); //Prevent to overheat boiler
-
+ 
   //Temperature sensor error
   myNex.writeNum("errIn.val",    countOfErrorIn);
   myNex.writeNum("errOut.val",   countOfErrorOut);
