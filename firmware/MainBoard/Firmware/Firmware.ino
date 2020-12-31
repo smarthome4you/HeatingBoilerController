@@ -34,6 +34,7 @@ RelaySSR boilerWaterPump(pinBoilerWaterPump);
 BoilerFeeder boilerFeeder(pinBoilerFeeder, pinBoilerFeederHall);
 FloorHeating floorHeatingPump(pinBoilerFloorPump);
 
+
 EasyNex myNex(Serial1);
 
 
@@ -57,6 +58,7 @@ void setup() {
   // Starting main pump for prevents discrepancies read signal from temperature sensors.
   boilerMainPump.on();
   boilerWaterPump.off();
+  floorHeatingPump.setHeatingPeriods(5, 240); // 5 minute every 4 hours if floor pump is not setting
   floorHeatingPump.pumpOff();
   FanOff();
 }

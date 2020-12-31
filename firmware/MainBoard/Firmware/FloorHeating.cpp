@@ -23,12 +23,12 @@ void FloorHeating::setHeatingPeriods(int onLength, int offLength)
 
 void FloorHeating::process()
 {
-  if (millis() - lastRun > this->offLength && !this->isOn())
+  if ((millis() - lastRun > this->offLength) && !this->isOn())
   {
     this->pumpOn();
     this->startTime = millis();
   }
-  if (millis() - startTime > this->onLength && this->isOn())
+  if ((millis() - startTime > this->onLength) && this->isOn())
   {
     this->pumpOff();
     this->lastRun = millis();
