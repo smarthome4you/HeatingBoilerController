@@ -8,6 +8,7 @@
 #include "BoilerFeeder.h"
 #include "RelaySSR.h"
 #include "BoilerFan.h"
+#include "FloorHeating.h"
 
 
 bool globalError              = false;
@@ -15,6 +16,7 @@ int  tempHysteresis           = 3;        // Histereza
 int  currentTargetTemperature = 55;       // Temperatura docelowa na kotle
 int  targetWaterTemperature   = 60;       // Temperatura wody użytkowej
 bool startHeating             = false;    // Wlaczenie procesu dogrzewania
+int fanSpeed                  = 5;        // Poczatkowa sila nadmuchu
 unsigned long lastHeatingTime = 0;
 
 
@@ -28,8 +30,9 @@ Temperature tempSensorWater(pinTempWater);
 
 RelaySSR boilerMainPump(pinBoilerCentralHeatingPump); 
 RelaySSR boilerWaterPump(pinBoilerWaterPump);
-RelaySSR boilerFloorPump(pinBoilerFloorPump);
+//RelaySSR boilerFloorPump(pinBoilerFloorPump);
 BoilerFeeder boilerFeeder(pinBoilerFeeder, pinBoilerFeederHall);
+FloorHeating floorHeatingPump(pinBoilerFloorPump);
 
 EasyNex myNex(Serial1);
 
@@ -42,9 +45,9 @@ void setup() {
   myNex.begin(9600);
   myNex.writeStr("page main");
 
-  tempSensorBoilerIn.init();
-  tempSensorBoilerOut.init();
-  tempSensorWater.init();
+  tempSensorBoilerIn.init(0);
+  tempSensorBoilerOut.init(500);
+  tempSensorWater.init(500);
   
   FanSetup();
   
@@ -54,12 +57,21 @@ void setup() {
   // Starting main pump for prevents discrepancies read signal from temperature sensors.
   boilerMainPump.on();
   boilerWaterPump.off();
-  boilerFloorPump.off();
+  floorHeatingPump.pumpOff();
   FanOff();
 }
 
+unsigned long timeReadFanSpeed = millis();
+int getFanSpeed()
+{
+  if ( ! (abs(millis() - timeReadFanSpeed) > timeToReadFanSpeed )) return fanSpeed;
+  fanSpeed = myNex.readNumber("speedFan.val");
+  timeReadFanSpeed = millis();
+  return fanSpeed;
+}
+
 unsigned long timeMainScreen = millis();
-void updateMainScreen(float tempBoilerIn, float tempBoilerOut, float tempBoilerWater, BoilerFeeder *boilerFeeder, RelaySSR *boilerMainPump, RelaySSR *boilerWaterPump, RelaySSR *boilerFloorPump)
+void updateMainScreen(float tempBoilerIn, float tempBoilerOut, float tempBoilerWater, int countOfErrorIn, int countOfErrorOut, int countOfErrorWater, BoilerFeeder *boilerFeeder, RelaySSR *boilerMainPump, RelaySSR *boilerWaterPump, FloorHeating *floorHeatingPump)
 {
   if ( ! (abs(millis() - timeMainScreen) > timeToUpdatescreen )) return;
 
@@ -68,7 +80,7 @@ void updateMainScreen(float tempBoilerIn, float tempBoilerOut, float tempBoilerW
 
   if ( boilerMainPump->isOn())  myNex.writeNum("ledBoilerPump.val", 1); else myNex.writeNum("ledBoilerPump.val", 0);
   if ( boilerWaterPump->isOn()) myNex.writeNum("ledWaterPump.val",  1); else myNex.writeNum("ledWaterPump.val",  0);
-  if ( boilerFloorPump->isOn()) myNex.writeNum("ledFloorPump.val",  1); else myNex.writeNum("ledFloorPump.val",  0);
+  if ( floorHeatingPump->isOn()) myNex.writeNum("ledFloorPump.val",  1); else myNex.writeNum("ledFloorPump.val",  0);
 
   if ( FanIsOn()) myNex.writeNum("ledBoilerFan.val", 1); else myNex.writeNum("ledBoilerFan.val", 0);
 
@@ -76,41 +88,22 @@ void updateMainScreen(float tempBoilerIn, float tempBoilerOut, float tempBoilerW
   myNex.writeNum("tempBoiler2.val", (int)(tempBoilerOut * 100));
   myNex.writeNum("tempWater.val",   (int)(tempBoilerWater * 100));
 
-  int onFloorHeat = myNex.readNumber("onFloorHeat.val");
-  if (onFloorHeat == 1) boilerFloorPump->on(); else boilerFloorPump->off();
-  
+  int onFloorHeatMin = myNex.readNumber("onFloorHeatMin.val");
+  int onFloorHeatMid = myNex.readNumber("onFloorHeatMid.val");
+  int onFloorHeatMax = myNex.readNumber("onFloorHeatMax.val");
+
+  if      (onFloorHeatMin == 1) floorHeatingPump->setHeatingPeriods(20, 220);// 2h
+  else if (onFloorHeatMid == 1) floorHeatingPump->setHeatingPeriods(20, 140);// 3h
+  else if (onFloorHeatMax == 1) floorHeatingPump->setHeatingPeriods(20, 100);// 4h
+  else floorHeatingPump->setHeatingPeriods(5, 240); //Prevent to overheat boiler
+
+  //Temperature sensor error
+  myNex.writeNum("errIn.val",    countOfErrorIn);
+  myNex.writeNum("errOut.val",   countOfErrorOut);
+  myNex.writeNum("errWater.val", countOfErrorWater);
 
   timeMainScreen = millis();
 }
-
-void updateManualScreen(BoilerFeeder *boilerFeeder, RelaySSR *boilerMainPump, RelaySSR *boilerWaterPump, RelaySSR *boilerFloorPump)
-{
-  if ( ! (abs(millis() - timeMainScreen) > timeToUpdatescreen )) return;
-
-  int onBoilerFan    = myNex.readNumber("onBoilerFan.val");
-  int speedBoilerFan = myNex.readNumber("fanSpeed.val");
-  if (onBoilerFan == 1) {
-    FanOn();
-    FanSetSpeed(speedBoilerFan);
-  } else FanOff();
-
-  int onBoilerFeeder = myNex.readNumber("onBoilerFeeder.val");
-  if (onBoilerFeeder == 1) boilerFeeder->on(); else boilerFeeder->off();
-
-  int onBoilerPump = myNex.readNumber("onBoilerPump.val");
-  if (onBoilerPump == 1) boilerMainPump->on(); else boilerMainPump->off();
-
-  int onWaterPump = myNex.readNumber("onWaterPump.val");
-  if (onWaterPump == 1) boilerWaterPump->on(); else boilerWaterPump->off();
-
-  int onFloorPump = myNex.readNumber("onFloorPump.val");
-  if (onFloorPump == 1) boilerFloorPump->on(); else boilerFloorPump->off();
-
-  if ( boilerFeeder->hall->getHallState()) myNex.writeNum("ledBoilerHall.val", 1); else myNex.writeNum("ledBoilerHall.val", 0);
-
-  timeMainScreen = millis();
-}
-
 
 void updateTargetTemperature()
 {
@@ -119,14 +112,16 @@ void updateTargetTemperature()
   if ( temp > 40 && temp < 75 ) currentTargetTemperature = temp;
 }
 
-void checkTemperatureRange(float tempIn, bool tempInError, float tempOut, bool tempOutError, float tempBoilerWater)
+void checkTemperatureRange(float tempIn, bool tempInError, float tempOut, bool tempOutError, float tempBoilerWater, bool tempWaterError)
 {
   if ( (abs(abs(tempIn) - abs(tempOut)) > 20) || tempIn > 70 || tempOut > 70 || tempIn < 0 || tempOut < 0 || tempInError == true || tempOutError == true )
   {
     globalError = true;
     boilerFeeder.shutDown();
     FanShutDown();
-    boilerFloorPump.on();
+    boilerWaterPump.on();
+    boilerMainPump.on();
+    floorHeatingPump.forcePumpOn();
     tone(pinBuzzer, 3500);
     if (myNex.currentPageId != 3) {
        myNex.writeStr("page error");
@@ -134,6 +129,9 @@ void checkTemperatureRange(float tempIn, bool tempInError, float tempOut, bool t
        myNex.writeNum("errorTempIn.val", (int) (tempIn * 100));
        myNex.writeNum("errorTempOut.val", (int) (tempOut * 100));
        myNex.writeNum("errorTempWater.val", (int) (tempBoilerWater * 100));
+       if (tempInError==true)     myNex.writeStr("infoErrIn.txt", "Error");    else myNex.writeStr("infoErrIn.txt", "OK");
+       if (tempOutError==true)    myNex.writeStr("infoErrOut.txt", "Error");   else myNex.writeStr("infoErrOut.txt", "OK");
+       if (tempWaterError==true)  myNex.writeStr("infoErrWater.txt", "Error"); else myNex.writeStr("infoErrWater.txt", "OK");
     }
   }
   else if ( boilerFeeder.isError() )
@@ -141,7 +139,9 @@ void checkTemperatureRange(float tempIn, bool tempInError, float tempOut, bool t
     globalError = true;
     boilerFeeder.shutDown();
     FanShutDown();
-    boilerFloorPump.on();
+    boilerWaterPump.on();
+    boilerMainPump.on();
+    floorHeatingPump.forcePumpOn();
     tone(pinBuzzer, 3500);
     if (myNex.currentPageId != 3) {
        myNex.writeStr("page error");
@@ -149,6 +149,9 @@ void checkTemperatureRange(float tempIn, bool tempInError, float tempOut, bool t
        myNex.writeNum("errorTempIn.val", (int) (tempIn * 100));
        myNex.writeNum("errorTempOut.val", (int) (tempOut * 100));
        myNex.writeNum("errorTempWater.val", (int) (tempBoilerWater * 100));
+       if (tempInError==true)     myNex.writeStr("infoErrIn.txt", "Error");    else myNex.writeStr("infoErrIn.txt", "OK");
+       if (tempOutError==true)    myNex.writeStr("infoErrOut.txt", "Error");   else myNex.writeStr("infoErrOut.txt", "OK");
+       if (tempWaterError==true)  myNex.writeStr("infoErrWater.txt", "Error"); else myNex.writeStr("infoErrWater.txt", "OK");
     }
   }
 }
@@ -179,11 +182,15 @@ void loop() {
     float tempBoilerIn    = tempSensorBoilerIn.get();
     float tempBoilerOut   = tempSensorBoilerOut.get();
     float tempBoilerWater = tempSensorWater.get();
+    int countOfErrorIn    = tempSensorBoilerIn.countOfError();
+    int countOfErrorOut   = tempSensorBoilerOut.countOfError();
+    int countOfErrorWater = tempSensorWater.countOfError();
 
     // Process heating
     updateTargetTemperature();
-    checkTemperatureRange(tempBoilerIn, tempSensorBoilerIn.isError(), tempBoilerOut, tempSensorBoilerOut.isError(), tempBoilerWater);
+    checkTemperatureRange(tempBoilerIn, tempSensorBoilerIn.isError(), tempBoilerOut, tempSensorBoilerOut.isError(), tempBoilerWater, tempSensorWater.isError());
     boilerFeeder.process();
+    floorHeatingPump.process();
 
     // Ciepła woda użytkowa
     if ( tempBoilerWater < targetWaterTemperature && tempBoilerWater < tempBoilerIn) {
@@ -201,7 +208,7 @@ void loop() {
       boilerFeeder.on();
       boilerFeeder.setRunInterval(180UL * 1000ULL);
       FanOn();
-      FanSetSpeed(5);
+      FanSetSpeed(getFanSpeed());
       FanLockOn(15UL * 1000UL);
       startHeating = true;
       lastHeatingTime = millis();
@@ -223,6 +230,5 @@ void loop() {
     
     // Process screen
     myNex.NextionListen();
-    if      ( myNex.currentPageId == 0 ) updateMainScreen(tempBoilerIn, tempBoilerOut, tempBoilerWater, &boilerFeeder, &boilerMainPump, &boilerWaterPump, &boilerFloorPump);
-    else if ( myNex.currentPageId == 1 ) updateManualScreen(&boilerFeeder, &boilerMainPump, &boilerWaterPump, &boilerFloorPump);
+    if ( myNex.currentPageId == 0 ) updateMainScreen(tempBoilerIn, tempBoilerOut, tempBoilerWater, countOfErrorIn, countOfErrorOut, countOfErrorWater, &boilerFeeder, &boilerMainPump, &boilerWaterPump, &floorHeatingPump);
   }

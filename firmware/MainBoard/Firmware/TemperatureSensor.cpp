@@ -3,23 +3,29 @@
 #include "TemperatureSensor.h"
 #include "Config.h"
 
+
 Temperature::Temperature(int pin)
 {
-  this->oneWire = new OneWire(pin);
-  this->sensor.setOneWire(oneWire);
-  this->sensor.begin();
+  this->pin = pin;
   this->tempCursor = 0;
   this->lastRead = tempInterval;
   this->errorCounter = 3;
+  this->globalErrorCounter = 0;
   this->iserror = false;
 }
 
 
-void Temperature::init()
+void Temperature::init(int wait)
 {
+  delay(wait);
+  this->oneWire = new OneWire(this->pin);
+  this->sensor.setOneWire(oneWire);
+  this->sensor.begin();
   this->sensor.requestTemperatures();
   this->currTemp = this->sensor.getTempCByIndex(0);
+  this->lastRead = millis();
 }
+
 
 float Temperature::get()
 {
@@ -27,9 +33,11 @@ float Temperature::get()
   this->lastRead = millis();
   this->sensor.requestTemperatures();
   float temperature = this->sensor.getTempCByIndex(0);
-  if ( temperature == -127 || abs(this->currTemp - temperature) > 4 )
+  if ( temperature == -127 || abs(this->currTemp - temperature) > 5 )
   {
+    this->oneWire->reset();
     errorCounter--;
+    globalErrorCounter++;
     return this->currTemp;
   }
   
@@ -58,8 +66,15 @@ bool Temperature::isError()
   return this->iserror;
 }
 
+
 unsigned long Temperature::lastReadMillis()
 {
   if ( millis() < this->lastRead ) this->lastRead = millis(); 
   return this->lastRead;
+}
+
+
+int Temperature::countOfError()
+{
+  return this->globalErrorCounter;
 }

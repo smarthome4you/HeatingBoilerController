@@ -8,10 +8,11 @@ class Temperature
 {
   public:
     Temperature(int pin);
-    void init();
+    void init(int wait);
     float get();
     unsigned long lastReadMillis();
     bool isError();
+    int countOfError();
   private:
     DallasTemperature sensor;
     OneWire *oneWire;
@@ -19,6 +20,8 @@ class Temperature
     float currTemp = -1000;
     byte tempCursor =0;
     int errorCounter = 3;
+    int globalErrorCounter = 0;
+    int pin;
     bool iserror = false;
     unsigned long lastRead;
 };
